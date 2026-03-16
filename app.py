@@ -170,9 +170,9 @@ if not df_filtrado.empty:
     with st.expander("ℹ️ ¿Cómo se leen estas barras? (Metodología de medición)", expanded=False):
         st.markdown("""
         Cada barra representa el **tiempo total acumulado** desde el último día del período facturado hasta alcanzar un hito:
-        * 🔵 **Azul (Presentación):** Días totales hasta la fecha de creación del expediente en el sistema.
-        * 🟣 **Morado (Auditoría):** Días totales hasta que finaliza la liquidación (prestaciones finales listas para CEB, SIRGE, etc.).
-        * 🔴 **Rojo (Pago):** Días totales hasta el movimiento bancario final.
+        * 🔵 **Azul (Presentación):** Días totales desde que finaliza el mes a facturar y hasta la fecha de creación del expediente en el sistema.
+        * 🟣 **Morado (Auditoría):** Días totales desde que finaliza el mes a facturar y se liquida el expediente (prestaciones finales listas para CEB, SIRGE, etc.).
+        * 🔴 **Rojo (Pago):** Días totales desde que finaliza el mes a facturar y hasta el movimiento bancario final.
         """)
 
     # Columnas de KPI usando df_filtrado
