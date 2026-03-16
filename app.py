@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import os
 
 # Configuración
@@ -121,7 +122,7 @@ if not df_filtrado.empty:
 
     colores = {
         '1. Presentación': '#5DADE2', 
-        '2. Auditoría': '#A569BD', # Cambiado a Morado como pediste
+        '2. Auditoría': '#A569BD', 
         '3. Pago Banco': '#E74C3C'          
     }
 
@@ -155,6 +156,7 @@ if not df_filtrado.empty:
         xaxis_tickangle=-45,
         yaxis_title="Días acumulados desde fin de período",
         legend_title="Etapas del Circuito",
+        legend=dict(traceorder='reversed'),  # ← invierte el orden de la leyenda
         hovermode="x unified",
         bargap=0.4,
         plot_bgcolor='rgba(0,0,0,0)',
@@ -182,23 +184,91 @@ if not df_filtrado.empty:
     with c3:
         st.metric("Total Expedientes", len(df_filtrado))
 
-    # --- TOP 15 EFECTORES ---
-    st.subheader("⚠️ Top 15 Efectores con Mayor Tiempo de Proceso Interno")
+    st.divider()
     
-    # Usamos la columna 'efector_display' que tiene Nombre (Localidad)
-    df_top_delay = df_filtrado.groupby('efector_display')['diastotalcreacionexptepago'].mean().sort_values(ascending=False).head(15).reset_index()
 
-    fig_delay = px.bar(df_top_delay, 
-                       x='diastotalcreacionexptepago', 
-                       y='efector_display', 
-                       orientation='h', 
-                       color='diastotalcreacionexptepago',
-                       color_continuous_scale='Reds',
-                       text_auto='.1f',
-                       labels={'diastotalcreacionexptepago': 'Días Promedio', 'efector_display': 'Efector'})
+    # --- TOP 15 EFECTORES (APILADO POR ETAPA) ---
+    st.subheader("⚠️ Top 15 Efectores con Mayor Tiempo de Proceso Interno")
 
-    fig_delay.update_layout(yaxis={'categoryorder':'total ascending'}, height=600)
-    st.plotly_chart(fig_delay, use_container_width=True)
+    df_top_delay = df_filtrado.groupby('efector_display').agg({
+        'diaslabcreaexpte': 'mean',
+        'diaslabliqefect':  'mean',
+        'diaslabpagobanco': 'mean'
+    }).reset_index()
+
+    # ✅ Solo los tramos internos desde la creación del expediente
+    df_top_delay['Tramo Auditoría'] = (
+        df_top_delay['diaslabliqefect'] - df_top_delay['diaslabcreaexpte']
+    ).clip(lower=0)
+
+    df_top_delay['Tramo Pago'] = (
+        df_top_delay['diaslabpagobanco'] - df_top_delay['diaslabliqefect']
+    ).clip(lower=0)
+
+    df_top_delay['Total Gestión'] = (
+        df_top_delay['Tramo Auditoría'] + df_top_delay['Tramo Pago']
+    )
+
+    # Top 15 ordenado descendente por total de gestión interna
+    df_top_delay = df_top_delay.sort_values('Total Gestión', ascending=False).head(15)
+
+    # Orden explícito del eje Y
+    orden_efectores = df_top_delay['efector_display'].tolist()[::-1]
+
+    customdata = df_top_delay[[
+        'Tramo Auditoría',
+        'Tramo Pago',
+        'Total Gestión'
+    ]].values
+
+    hover_template = (
+        "<b>%{y}</b><br>"
+        "──────────────────────<br>"
+        "🔍 Auditoría (creación→liq): <b>%{customdata[0]:.1f} días</b><br>"
+        "💰 Pago (liq→banco):         <b>%{customdata[1]:.1f} días</b><br>"
+        "──────────────────────<br>"
+        "📊 Total gestión interna:    <b>%{customdata[2]:.1f} días</b>"
+        "<extra></extra>"
+    )
+
+    fig_delay = go.Figure()
+
+    # ✅ Auditoría primero → queda a la izquierda en la barra Y primero en la leyenda
+    fig_delay.add_trace(go.Bar(
+        name='2. Auditoría',
+        y=df_top_delay['efector_display'],
+        x=df_top_delay['Tramo Auditoría'],
+        orientation='h',
+        marker_color='#A569BD',
+        customdata=customdata,
+        hovertemplate=hover_template,
+    ))
+
+    # ✅ Pago Banco segundo → queda a la derecha en la barra Y segundo en la leyenda
+    fig_delay.add_trace(go.Bar(
+        name='3. Pago Banco',
+        y=df_top_delay['efector_display'],
+        x=df_top_delay['Tramo Pago'],
+        orientation='h',
+        marker_color='#E74C3C',
+        customdata=customdata,
+        hovertemplate=hover_template,
+    ))
+
+    fig_delay.update_layout(
+        barmode='stack',
+        title="Tiempo de Gestión Interna por Efector (desde creación del expediente)",
+        yaxis=dict(categoryorder='array', categoryarray=orden_efectores),
+        xaxis_title='Días Promedio',
+        yaxis_title='Efector',
+        height=700,
+        legend_title="Etapas del Circuito",
+        # ✅ Sin traceorder, el orden natural de add_trace define la leyenda
+        margin=dict(l=50, r=50, t=50, b=50),
+        hoverlabel=dict(bgcolor="white", font_size=13, font_family="monospace")
+    )
+
+    st.plotly_chart(fig_delay, use_container_width=True)    
 
 else:
     st.warning("⚠️ No hay datos para los filtros seleccionados. Por favor, ajusta los Años, Meses o Efectores.")
