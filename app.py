@@ -92,7 +92,7 @@ st.title("📊 Circuito Administrativo de las Prestaciones Facturadas 2018 - 202
 if not df_filtrado.empty:
     
     # --- GRÁFICO DE BARRAS FINAL CON EJE CATEGÓRICO ---
-    st.subheader("⏳ Composición del Tiempo por Período desde que finaliza un mes calendario")
+    st.subheader("⏳ Composición del Tiempo desde que finaliza un mes calendario")
 
     # 1. Agrupamos usando df_filtrado
     df_acum = df_filtrado.groupby('periodo').agg({
