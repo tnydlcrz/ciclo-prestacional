@@ -268,7 +268,18 @@ if not df_filtrado.empty:
         hoverlabel=dict(bgcolor="white", font_size=13, font_family="monospace")
     )
 
-    st.plotly_chart(fig_delay, use_container_width=True)    
+    # ✅ Agregamos la línea de meta de 30 días
+    fig_delay.add_vline(
+        x=30, 
+        line_dash="dash", 
+        line_color="#F1C40F", 
+        line_width=2,
+        annotation_text="30 DÍAS", 
+        annotation_position="top left",
+        annotation_font_color="#F1C40F"
+    )
+
+    st.plotly_chart(fig_delay, use_container_width=True)       
 
 else:
     st.warning("⚠️ No hay datos para los filtros seleccionados. Por favor, ajusta los Años, Meses o Efectores.")
