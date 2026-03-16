@@ -114,15 +114,15 @@ if not df_filtrado.empty:
     
     # 2. Definiciones de Estilo
     nombres_leyenda = {
-        'diaslabcreaexpte': '1. Presentación (Creación Expte)',
-        'diaslabliqefect': '2. Auditoría Finalizada',
-        'diaslabpagobanco': '3. Pago Efectivo (Banco)'
+        'diaslabcreaexpte': '1. Presentación',
+        'diaslabliqefect': '2. Auditoría',
+        'diaslabpagobanco': '3. Pago Banco'
     }
 
     colores = {
-        '1. Presentación (Creación Expte)': '#5DADE2', 
-        '2. Auditoría Finalizada': '#A569BD', # Cambiado a Morado como pediste
-        '3. Pago Efectivo (Banco)': '#E74C3C'          
+        '1. Presentación': '#5DADE2', 
+        '2. Auditoría': '#A569BD', # Cambiado a Morado como pediste
+        '3. Pago Banco': '#E74C3C'          
     }
 
     # 3. Creación del gráfico
