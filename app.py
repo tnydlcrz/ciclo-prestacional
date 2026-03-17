@@ -31,8 +31,8 @@ def load_data():
     
     # 3. Conversión de columnas de días a numérico
     cols_dias = [
-        'diaslabcreaexpte', 'diasiniciocreacionexpte', 'diaslabliqefect',
-        'diaslabop', 'diaslabpagobanco', 'diastotalcreacionexptepago', 'diastotalfinperiodo'
+        'diascreaexpte', 'diasiniciocreacionexpte', 'diasliqefect',
+        'diasop', 'diaspagobanco', 'diastotalcreacionexptepago', 'diastotalfinperiodo'
     ]
     for col in cols_dias:
         df_final[col] = pd.to_numeric(df_final[col], errors='coerce')
@@ -96,13 +96,13 @@ if not df_filtrado.empty:
 
     # 1. Agrupamos usando df_filtrado
     df_acum = df_filtrado.groupby('periodo').agg({
-        'diaslabcreaexpte': 'mean',
-        'diaslabliqefect': 'mean',
-        'diaslabpagobanco': 'mean',
+        'diascreaexpte': 'mean',
+        'diasliqefect': 'mean',
+        'diaspagobanco': 'mean',
         'periodo_dt': 'first' 
     }).reset_index().sort_values('periodo_dt')
 
-    promedio_historico = df_acum['diaslabpagobanco'].mean()
+    promedio_historico = df_acum['diaspagobanco'].mean()
 
     # MAPEO MANUAL A ESPAÑOL
     meses_es = {
@@ -111,13 +111,13 @@ if not df_filtrado.empty:
     }
 
     # Creamos la etiqueta: "Ene 2024"
-    df_acum['periodo_texto'] = df_acum['periodo_dt'].dt.month.map(meses_es) + " " + df_acum['periodo_dt'].dt.year.astype(str)
+    df_acum['mes_fact'] = df_acum['periodo_dt'].dt.month.map(meses_es) + " " + df_acum['periodo_dt'].dt.year.astype(str)
     
     # 2. Definiciones de Estilo
     nombres_leyenda = {
-        'diaslabcreaexpte': '1. Presentación',
-        'diaslabliqefect': '2. Auditoría',
-        'diaslabpagobanco': '3. Pago Banco'
+        'diascreaexpte': '1. Presentación',
+        'diasliqefect': '2. Auditoría',
+        'diaspagobanco': '3. Pago Banco'
     }
 
     colores = {
@@ -128,8 +128,8 @@ if not df_filtrado.empty:
 
     # 3. Creación del gráfico
     fig_barras = px.bar(df_acum, 
-                        x='periodo_texto', 
-                        y=['diaslabpagobanco', 'diaslabliqefect', 'diaslabcreaexpte'], 
+                        x='mes_fact', 
+                        y=['diaspagobanco', 'diasliqefect', 'diascreaexpte'], 
                         barmode='overlay',
                         title="Hitos de Gestión Acumulados por Mes")
 
@@ -178,9 +178,9 @@ if not df_filtrado.empty:
     # Columnas de KPI usando df_filtrado
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.metric("Promedio Auditoría", f"{df_filtrado['diaslabliqefect'].mean():.1f} días")
+        st.metric("Promedio Auditoría", f"{df_filtrado['diasliqefect'].mean():.1f} días")
     with c2:
-        st.metric("Promedio Pago", f"{df_filtrado['diaslabpagobanco'].mean():.1f} días")
+        st.metric("Promedio Pago", f"{df_filtrado['diaspagobanco'].mean():.1f} días")
     with c3:
         st.metric("Total Expedientes", len(df_filtrado))
 
@@ -191,18 +191,18 @@ if not df_filtrado.empty:
     st.subheader("⚠️ Top 15 Efectores con Mayor Tiempo de Proceso Interno")
 
     df_top_delay = df_filtrado.groupby('efector_display').agg({
-        'diaslabcreaexpte': 'mean',
-        'diaslabliqefect':  'mean',
-        'diaslabpagobanco': 'mean'
+        'diascreaexpte': 'mean',
+        'diasliqefect':  'mean',
+        'diaspagobanco': 'mean'
     }).reset_index()
 
     # ✅ Solo los tramos internos desde la creación del expediente
     df_top_delay['Tramo Auditoría'] = (
-        df_top_delay['diaslabliqefect'] - df_top_delay['diaslabcreaexpte']
+        df_top_delay['diasliqefect'] - df_top_delay['diascreaexpte']
     ).clip(lower=0)
 
     df_top_delay['Tramo Pago'] = (
-        df_top_delay['diaslabpagobanco'] - df_top_delay['diaslabliqefect']
+        df_top_delay['diaspagobanco'] - df_top_delay['diasliqefect']
     ).clip(lower=0)
 
     df_top_delay['Total Gestión'] = (
